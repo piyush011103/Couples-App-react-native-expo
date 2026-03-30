@@ -322,7 +322,7 @@ const CountdownScreen = () => {
             </View>
           </View>
         ) : countdown && !timeLeft ? (
-          <BlurView intensity={Platform.OS === 'ios' ? 50 : 90} tint={mode === 'dark' ? "dark" : "light"} style={styles.reachedCard}>
+          <View intensity={Platform.OS === 'ios' ? 50 : 90} tint={mode === 'dark' ? "dark" : "light"} style={styles.reachedCard}>
             <LinearGradient
               colors={mode === 'dark' ? ['rgba(255,255,255,0.05)', 'transparent'] : ['rgba(255,255,255,0.3)', 'transparent']}
               start={{ x: 0, y: 0 }} end={{ x: 0.5, y: 0.5 }}
@@ -332,7 +332,7 @@ const CountdownScreen = () => {
             <Text style={[styles.reachedTitle, { color: colors.text, fontFamily: 'Manrope_800ExtraBold' }]}>Convergence Achieved</Text>
             <Text style={[styles.reachedSub, { color: colors.textSub, fontFamily: 'PlusJakartaSans_500Medium' }]}>The moment for {countdown.eventName} is now.</Text>
             <PrimaryButton title="PROJECT NEW MILESTONE" onPress={() => setShowForm(true)} style={{ marginTop: 28 }} />
-          </BlurView>
+          </View>
         ) : (
           <TouchableOpacity style={styles.emptyContainer} onPress={() => setShowForm(true)}>
             <BlurView intensity={Platform.OS === 'ios' ? 40 : 80} tint={mode === 'dark' ? "dark" : "light"} style={styles.emptyCard}>
