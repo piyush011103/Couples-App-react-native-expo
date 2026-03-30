@@ -5,7 +5,7 @@ import useAuthStore from './useAuthStore';
 // ── Keep this in sync with src/api/apiClient.js BASE_URL ──────────
 // Android Emulator  → http://10.0.2.2:5000
 // Physical Device   → http://192.168.1.5:5000
-const SOCKET_URL = 'http://192.168.1.5:5000';
+const SOCKET_URL = 'http://192.168.1.4:5000';
 
 const useSocketStore = create((set, get) => ({
     socket: null,

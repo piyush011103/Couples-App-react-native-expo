@@ -21,6 +21,8 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  FadeInUp,
+  FadeOut,
 } from "react-native-reanimated";
 import { RADIUS, SIZES } from "../constants/theme";
 import useAuthStore from "../store/useAuthStore";
@@ -42,52 +44,9 @@ const MOOD_EMOJI = {
 /**
  * Atmospheric Background Glow Component
  */
-const AnimatedGlow = ({ color, style, duration = 8000 }) => {
-  const transX = useSharedValue(0);
-  const transY = useSharedValue(0);
-  const scale = useSharedValue(1);
 
-  useEffect(() => {
-    transX.value = withRepeat(withSequence(withTiming(30, { duration }), withTiming(-30, { duration })), -1, true);
-    transY.value = withRepeat(withSequence(withTiming(-40, { duration: duration * 1.2 }), withTiming(40, { duration: duration * 1.2 })), -1, true);
-    scale.value = withRepeat(withSequence(withTiming(1.2, { duration: duration * 1.5 }), withTiming(0.8, { duration: duration * 1.5 })), -1, true);
-  }, []);
 
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: transX.value }, { translateY: transY.value }, { scale: scale.value }],
-    opacity: 0.15,
-  }));
 
-  return (
-    <Animated.View style={[styles.glowCircle, { backgroundColor: color }, style, animStyle]} />
-  );
-};
-
-const FeatureTile = ({ icon, title, subtitle, onPress, colors }) => (
-  <TouchableOpacity
-    style={styles.featureTile}
-    onPress={onPress}
-    activeOpacity={0.8}
-  >
-    <BlurView intensity={35} tint="dark" style={styles.tileBlur}>
-      <View style={styles.iconBay}>
-        <LinearGradient
-          colors={['rgba(138, 43, 226, 0.15)', 'transparent']}
-          style={styles.iconBayGradient}
-        />
-        <Ionicons name={icon} size={28} color={colors.primary} />
-      </View>
-      <View>
-        <Text style={[styles.tileTitle, { color: colors.text, fontFamily: 'Manrope_800ExtraBold' }]}>
-          {title}
-        </Text>
-        <Text style={[styles.tileSub, { color: colors.textMuted, fontFamily: 'PlusJakartaSans_600SemiBold' }]}>
-          {subtitle.toUpperCase()}
-        </Text>
-      </View>
-    </BlurView>
-  </TouchableOpacity>
-);
 
 const DashboardScreen = ({ navigation }) => {
   const { user } = useAuthStore();
@@ -95,6 +54,55 @@ const DashboardScreen = ({ navigation }) => {
   const socket = useSocketStore((state) => state.socket);
   const { colors, toggleTheme, mode } = useThemeStore();
   const insets = useSafeAreaInsets();
+  const styles = createStyles(colors, mode);
+
+  const AnimatedGlow = ({ color, style, duration = 8000 }) => {
+    const transX = useSharedValue(0);
+    const transY = useSharedValue(0);
+    const scale = useSharedValue(1);
+
+    useEffect(() => {
+      transX.value = withRepeat(withSequence(withTiming(30, { duration }), withTiming(-30, { duration })), -1, true);
+      transY.value = withRepeat(withSequence(withTiming(-40, { duration: duration * 1.2 }), withTiming(40, { duration: duration * 1.2 })), -1, true);
+      scale.value = withRepeat(withSequence(withTiming(1.2, { duration: duration * 1.5 }), withTiming(0.8, { duration: duration * 1.5 })), -1, true);
+    }, []);
+
+    const animStyle = useAnimatedStyle(() => ({
+      transform: [{ translateX: transX.value }, { translateY: transY.value }, { scale: scale.value }],
+      opacity: 0.15,
+    }));
+
+    return (
+      <Animated.View style={[styles.glowCircle, { backgroundColor: color }, style, animStyle]} />
+    );
+  };
+
+  const FeatureTile = ({ icon, title, subtitle, onPress }) => (
+    <TouchableOpacity
+      style={styles.featureTile}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <BlurView intensity={Platform.OS === 'ios' ? 35 : 45} tint={mode === 'dark' ? 'dark' : 'light'} style={styles.tileBlur}>
+        <View style={styles.iconBay}>
+          <LinearGradient
+            colors={mode === 'dark' ? ['rgba(138, 43, 226, 0.2)', 'transparent'] : ['rgba(165, 59, 34, 0.15)', 'transparent']}
+            style={styles.iconBayGradient}
+          />
+          <Ionicons name={icon} size={28} color={colors.primary} />
+        </View>
+        <View>
+          <Text style={[styles.tileTitle, { color: colors.text, fontFamily: 'Manrope_800ExtraBold' }]}>
+            {title}
+          </Text>
+          <Text style={[styles.tileSub, { color: colors.textMuted, fontFamily: 'PlusJakartaSans_700Bold', opacity: 0.8 }]}>
+            {subtitle.toUpperCase()}
+          </Text>
+        </View>
+      </BlurView>
+
+    </TouchableOpacity>
+  );
 
   const [partner, setPartner] = useState(null);
   const [partnerLoading, setPartnerLoading] = useState(true);
@@ -204,8 +212,8 @@ const DashboardScreen = ({ navigation }) => {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       {/* Editorial Background Depth */}
-      <AnimatedGlow color="#8A2BE2" style={{ top: '10%', right: '-10%' }} />
-      <AnimatedGlow color="#FF4D8D" style={{ bottom: '20%', left: '-15%' }} duration={12000} />
+      <AnimatedGlow color={mode === 'dark' ? "#8A2BE2" : "#FF7E5F"} style={{ top: '10%', right: '-10%' }} />
+      <AnimatedGlow color={mode === 'dark' ? "#FF4D8D" : "#FEB47B"} style={{ bottom: '20%', left: '-15%' }} duration={12000} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -218,7 +226,7 @@ const DashboardScreen = ({ navigation }) => {
              onPress={() => navigation.navigate("More")}
            >
              <LinearGradient 
-               colors={['#8A2BE2', '#FF4D8D']} 
+               colors={mode === 'dark' ? ['#8A2BE2', '#FF4D8D'] : ['#A53B22', '#FF7E5F']} 
                style={styles.avatarInner}
                start={{ x: 0.0, y: 0.0 }}
                end={{ x: 1.0, y: 1.0 }}
@@ -245,15 +253,15 @@ const DashboardScreen = ({ navigation }) => {
 
         {/* Card 1: Partner Current State Sanctuary */}
         {partnerLoading ? (
-          <View style={[styles.loadingBanner, { backgroundColor: 'rgba(52, 52, 64, 0.3)' }]}>
+          <View style={[styles.loadingBanner, { backgroundColor: colors.surfaceContainer }]}>
             <ActivityIndicator color={colors.primary} />
           </View>
         ) : partner ? (
-          <BlurView intensity={45} tint="dark" style={styles.partnerStateCard}>
+          <BlurView intensity={45} tint={mode === 'dark' ? "dark" : "light"} style={styles.partnerStateCard}>
             <View style={styles.cardHeader}>
               <View style={styles.partnerAvatarWrap}>
                 <LinearGradient 
-                  colors={['rgba(138, 43, 226, 0.2)', 'rgba(255, 77, 141, 0.15)']} 
+                  colors={mode === 'dark' ? ['rgba(138, 43, 226, 0.2)', 'rgba(255, 77, 141, 0.15)'] : ['rgba(165, 59, 34, 0.15)', 'rgba(255, 126, 95, 0.1)']} 
                   style={styles.partnerAvatarMain}
                   start={{ x: 0.0, y: 0.0 }}
                   end={{ x: 1.0, y: 1.0 }}
@@ -263,7 +271,7 @@ const DashboardScreen = ({ navigation }) => {
                     {partner.name?.[0]?.toUpperCase()}
                   </Text>
                 </LinearGradient>
-                <Animated.View style={[styles.statusPulse, { backgroundColor: '#FFB1C4' }, pulseStyle]} />
+                  <Animated.View style={[styles.statusPulse, { backgroundColor: colors.secondary || '#FFB1C4' }, pulseStyle]} />
               </View>
               <View style={{ flex: 1, marginLeft: 16 }}>
                  <Text style={[styles.statusBrief, { color: colors.text, fontFamily: 'Manrope_800ExtraBold' }]}>
@@ -279,7 +287,7 @@ const DashboardScreen = ({ navigation }) => {
         ) : null}
 
         {/* Card 2: Send Pulse (Love Tap Heartbeat) */}
-        <BlurView intensity={35} tint="dark" style={styles.pulseCard}>
+        <BlurView intensity={35} tint={mode === 'dark' ? "dark" : "light"} style={styles.pulseCard}>
           <Text style={[styles.pulseHeading, { color: colors.text, fontFamily: 'Manrope_700Bold' }]}>
             Send a digital heartbeat?
           </Text>
@@ -289,17 +297,21 @@ const DashboardScreen = ({ navigation }) => {
           
           <View style={styles.interactionArea}>
             {loveTapReceived && (
-              <Animated.View style={[styles.receivedSignal, { backgroundColor: colors.accent + '30' }]}>
+              <Animated.View 
+                entering={FadeInUp.springify()} 
+                exiting={FadeOut.duration(500)}
+                style={[styles.receivedSignal, { backgroundColor: colors.accent + '30' }]}
+              >
                 <Text style={[styles.receivedSignalText, { color: colors.accent, fontFamily: 'PlusJakartaSans_700Bold' }]}>
                   💌 HEARTBEAT RECEIVED
                 </Text>
               </Animated.View>
             )}
             
-            <TouchableOpacity onPress={handleLoveTap} activeOpacity={0.8}>
+            <TouchableOpacity onPress={handleLoveTap} activeOpacity={0.8} style={{ zIndex: 1 }}>
                <Animated.View style={[styles.heartOuterContainer, heartStyle]}>
                   <LinearGradient
-                    colors={['#8A2BE2', '#FF4D8D']}
+                    colors={mode === 'dark' ? ['#8A2BE2', '#FF4D8D'] : ['#A53B22', '#FF7E5F']}
                     style={styles.massiveHeart}
                     start={{ x: 0.0, y: 0.0 }}
                     end={{ x: 1.0, y: 1.0 }}
@@ -322,7 +334,7 @@ const DashboardScreen = ({ navigation }) => {
             onPress={() => navigation.navigate("Countdown")}
             activeOpacity={0.8}
           >
-            <BlurView intensity={30} tint="dark" style={styles.countdownCard}>
+            <BlurView intensity={30} tint={mode === 'dark' ? "dark" : "light"} style={styles.countdownCard}>
               <View style={styles.cardInfo}>
                 <Text style={[styles.countdownLabel, { color: colors.textMuted, fontFamily: 'PlusJakartaSans_600SemiBold' }]}>
                   {countdown.eventName.toUpperCase()}
@@ -344,7 +356,7 @@ const DashboardScreen = ({ navigation }) => {
             onPress={() => navigation.navigate("Countdown")}
             activeOpacity={0.7}
           >
-            <View style={[styles.addCountdownCard, { borderColor: colors.primary + '30' }]}>
+            <View style={[styles.addCountdownCard, { borderColor: colors.primary + '30', backgroundColor: colors.primary + '0D' }]}>
                <Ionicons name="calendar-outline" size={24} color={colors.primary} style={{ marginBottom: 8 }} />
                <Text style={[styles.addCountdownText, { color: colors.primary, fontFamily: 'PlusJakartaSans_700Bold' }]}>
                  PLAN YOUR NEXT SANCTUARY VISIT ✦
@@ -361,19 +373,19 @@ const DashboardScreen = ({ navigation }) => {
         </View>
         
         <View style={styles.editorialGrid}>
-          <FeatureTile icon="chatbubble-ellipses-outline" title="Chat" subtitle="Editorial" colors={colors} onPress={() => navigation.navigate("ChatTab")} />
-          <FeatureTile icon="heart-outline" title="Sanctuary" subtitle="Memories" colors={colors} onPress={() => navigation.navigate("Memories")} />
-          <FeatureTile icon="pulse-outline" title="Check-In" subtitle="Sync Mood" colors={colors} onPress={() => navigation.navigate("CheckIn")} />
-          <FeatureTile icon="play-circle-outline" title="Cinema" subtitle="Watch" colors={colors} onPress={() => navigation.navigate("Watch")} />
-          <FeatureTile icon="game-controller-outline" title="Arena" subtitle="Play" colors={colors} onPress={() => navigation.navigate("Games")} />
-          <FeatureTile icon="settings-outline" title="Portal" subtitle="Settings" colors={colors} onPress={() => navigation.navigate("More")} />
+          <FeatureTile icon="chatbubble-ellipses-outline" title="Chat" subtitle="Editorial" onPress={() => navigation.navigate("ChatTab")} />
+          <FeatureTile icon="heart-outline" title="Sanctuary" subtitle="Memories" onPress={() => navigation.navigate("Memories")} />
+          <FeatureTile icon="pulse-outline" title="Check-In" subtitle="Sync Mood" onPress={() => navigation.navigate("CheckIn")} />
+          <FeatureTile icon="play-circle-outline" title="Cinema" subtitle="Watch" onPress={() => navigation.navigate("Watch")} />
+          <FeatureTile icon="game-controller-outline" title="Arena" subtitle="Play" onPress={() => navigation.navigate("Games")} />
+          <FeatureTile icon="settings-outline" title="Portal" subtitle="Settings" onPress={() => navigation.navigate("More")} />
         </View>
       </ScrollView>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors, mode) => StyleSheet.create({
   root: { flex: 1 },
   glowCircle: {
     position: 'absolute',
@@ -452,12 +464,14 @@ const styles = StyleSheet.create({
   },
   pulseHeading: { fontSize: 22, letterSpacing: -0.5, marginBottom: 8 },
   pulseSub: { fontSize: 14, textAlign: 'center', opacity: 0.7, lineHeight: 20, marginBottom: 24 },
-  interactionArea: { alignItems: 'center' },
+  interactionArea: { alignItems: 'center', height: 260, justifyContent: 'center', position: 'relative' },
   receivedSignal: {
+    position: 'absolute',
+    top: -20,
+    zIndex: 10,
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
-    marginBottom: 20,
   },
   receivedSignalText: { fontSize: 10, letterSpacing: 1.5 },
   heartOuterContainer: {
@@ -518,7 +532,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tileBlur: {
-    flex: 1,
+    borderRadius: 28,
+    overflow: 'hidden',
     padding: 24,
     minHeight: 150,
     justifyContent: 'space-between',

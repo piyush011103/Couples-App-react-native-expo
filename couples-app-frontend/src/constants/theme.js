@@ -37,6 +37,8 @@ export const DARK_COLORS = {
   errorContainer: "#93000A",
   success: "#00E676",
   warning: "#FFD740",
+  online: "#4ADE80",
+  offline: "#94A3B8",
 
   // ── Borders (The No-Line Rule) ────────────────────
   border: "rgba(152,140,160,0.15)", // Subtle outline
@@ -49,15 +51,51 @@ export const DARK_COLORS = {
 };
 
 export const LIGHT_COLORS = {
-  // Keeping fallback structure, though project is primarily Dark Mode
-  background: "#F7F8FF",
-  surface: "#FFFFFF",
-  primary: "#7B35E8",
-  secondary: "#E6488B",
-  text: "#16172B",
-  textSub: "#52577A",
-  textMuted: "#7A81A6",
-  border: "rgba(123,53,232,0.18)",
+  // ── Core backgrounds (The Ethereal Editor) ────────
+  background: "#FEF9EF",
+  surface: "#FEF9EF",
+  surfaceDim: "#DEDAD0",
+  surfaceContainerLowest: "#FFFFFF",
+
+  // ── Surface Containers (Layering) ─────────────────
+  surfaceContainerLow: "#F8F3E9",
+  surfaceContainer: "#F2EDE4",
+  surfaceContainerHigh: "#ECE8DE",
+  surfaceContainerHighest: "#E7E2D8",
+  surfaceBright: "#FEF9EF",
+
+  // ── Brand / Portal (Primary) ──────────────────────
+  primary: "#A53B22",
+  primaryContainer: "#FF7E5F",
+  primaryFixed: "#FFDAD2",
+  primaryFixedDim: "#FFB4A3",
+
+  // ── Branding / Accent (The Warm Glow) ─────────────
+  secondary: "#895121",
+  secondaryContainer: "#FEB47B", // Soft Orange/Brown
+  accent: "#FF7E5F", 
+
+  // ── Text hierarchy (Editorial) ───────────────────
+  text: "#1D1C16", // onSurface
+  textSub: "#57423D", // onSurfaceVariant
+  textMuted: "#8B716B", // outline
+
+  // ── Status (Soft Tones) ──────────────────────────
+  error: "#BA1A1A",
+  errorContainer: "#FFDAD6",
+  success: "#2E7D32", 
+  warning: "#F57C00",
+  online: "#A53B22",
+  offline: "#8B716B",
+
+  // ── Borders (The No-Line Rule) ────────────────────
+  border: "rgba(139,113,107,0.12)", // Subtle outline
+  borderLight: "rgba(139,113,107,0.06)",
+
+  // ── Glassmorphism ─────────────────────────────────
+  glass: "rgba(255,255,255,0.60)", // surface_container_lowest @ 60% with blur
+  glassBorder: "rgba(139,113,107,0.08)",
+  glassHighlight: "rgba(255,255,255,0.40)",
 };
 
 export const COLORS = DARK_COLORS;
@@ -135,7 +173,11 @@ export const DARK_GRADIENTS = {
 };
 
 export const LIGHT_GRADIENTS = {
-  brand: ["#7B35E8", "#E6488B"],
+  brand: ["#A53B22", "#FF7E5F"], // Terracotta to Coral
+  primary: ["#FF7E5F", "#A53B22"],
+  surface: ["#FEF9EF", "#F2EDE4"],
+  glass: ["rgba(255,255,255,0.7)", "rgba(255,255,255,0.4)"],
+  overlay: ["rgba(254,249,239,0)", "rgba(254,249,239,0.95)"],
 };
 
 export const GRADIENTS = DARK_GRADIENTS;

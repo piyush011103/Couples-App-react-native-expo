@@ -55,7 +55,7 @@ const TypingDot = ({ style }) => {
   return <Animated.View style={[style, animStyle]} />;
 };
 
-const MessageBubble = ({ item, isSelf, colors }) => {
+const MessageBubble = ({ item, isSelf, colors, mode }) => {
   const time = new Date(item.createdAt).toLocaleTimeString([], {
     hour: "2-digit",
     minute: "2-digit",
@@ -69,21 +69,21 @@ const MessageBubble = ({ item, isSelf, colors }) => {
       <View style={isSelf ? styles.bubbleWrapperSelf : styles.bubbleWrapperPartner}>
         {isSelf ? (
           <LinearGradient
-            colors={['#8A2BE2', '#FF4D8D']}
+            colors={mode === 'dark' ? ['#8A2BE2', '#FF4D8D'] : ['#A53B22', '#FF7E5F']}
             start={{ x: 0.0, y: 0.0 }}
             end={{ x: 1.0, y: 1.0 }}
             locations={[0.0, 1.0]}
             style={[styles.bubble, styles.selfBubble]}
           >
-            <Text style={[styles.bubbleText, { color: '#E3E0F1', fontFamily: 'Manrope_400Regular' }]}>
+            <Text style={[styles.bubbleText, { color: mode === 'dark' ? "#E3E0F1" : "#FEF9EF", fontFamily: 'Manrope_400Regular' }]}>
               {item.text}
             </Text>
-            <Text style={[styles.bubbleTime, { color: 'rgba(227, 224, 241, 0.5)', fontFamily: 'PlusJakartaSans_500Medium' }]}>
+            <Text style={[styles.bubbleTime, { color: mode === 'dark' ? 'rgba(227, 224, 241, 0.5)' : 'rgba(254, 249, 239, 0.6)', fontFamily: 'PlusJakartaSans_500Medium' }]}>
               {time}
             </Text>
           </LinearGradient>
         ) : (
-          <View style={[styles.bubble, styles.partnerBubble, { backgroundColor: 'rgba(52, 52, 64, 0.4)' }]}>
+          <View style={[styles.bubble, styles.partnerBubble, { backgroundColor: mode === 'dark' ? 'rgba(52, 52, 64, 0.4)' : colors.surfaceContainerHigh }]}>
             <Text style={[styles.bubbleText, { color: colors.text, fontFamily: 'Manrope_400Regular' }]}>
               {item.text}
             </Text>
@@ -101,7 +101,7 @@ const ChatScreen = () => {
   const { user } = useAuthStore();
   const socket = useSocketStore((state) => state.socket);
   const typingFromPartner = useSocketStore((state) => state.typingFromPartner);
-  const { colors } = useThemeStore();
+  const { colors, mode } = useThemeStore();
   const insets = useSafeAreaInsets();
 
   const [messages, setMessages] = useState([]);
@@ -208,7 +208,9 @@ const ChatScreen = () => {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={['rgba(138, 43, 226, 0.12)', 'rgba(255, 77, 141, 0.08)', 'rgba(18, 18, 29, 0)']}
+        colors={mode === 'dark' 
+          ? ['rgba(138, 43, 226, 0.12)', 'rgba(255, 77, 141, 0.08)', 'rgba(18, 18, 29, 0)']
+          : ['rgba(165, 59, 34, 0.08)', 'rgba(255, 126, 95, 0.05)', 'rgba(254, 249, 239, 0)']}
         style={styles.bgGlow}
         start={{ x: 0.0, y: 0.0 }}
         end={{ x: 1.0, y: 1.0 }}
@@ -219,7 +221,7 @@ const ChatScreen = () => {
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <View style={styles.avatarWrap}>
           <LinearGradient
-            colors={['#8A2BE2', '#FF4D8D']}
+            colors={mode === 'dark' ? ['#8A2BE2', '#FF4D8D'] : ['#A53B22', '#FF7E5F']}
             style={styles.avatar}
             start={{ x: 0.0, y: 0.0 }}
             end={{ x: 1.0, y: 1.0 }}
@@ -275,6 +277,7 @@ const ChatScreen = () => {
                   item={item}
                   isSelf={item.sender === user._id || item.sender?._id === user._id}
                   colors={colors}
+                  mode={mode}
                 />
               )}
               keyExtractor={(item, i) => item._id || `msg-${i}`}
@@ -304,11 +307,11 @@ const ChatScreen = () => {
 
           {typingFromPartner && (
             <View style={styles.typingContainer}>
-              <BlurView intensity={25} tint="dark" style={styles.typingIndicator}>
+              <BlurView intensity={25} tint={mode === 'dark' ? "dark" : "light"} style={styles.typingIndicator}>
                 <View style={styles.dotsRow}>
-                  <TypingDot style={[styles.dot, { backgroundColor: '#FFB1C4' }]} />
-                  <TypingDot style={[styles.dot, { backgroundColor: '#FFB1C4' }]} />
-                  <TypingDot style={[styles.dot, { backgroundColor: '#FFB1C4' }]} />
+                  <TypingDot style={[styles.dot, { backgroundColor: colors.secondary || '#FFB1C4' }]} />
+                  <TypingDot style={[styles.dot, { backgroundColor: colors.secondary || '#FFB1C4' }]} />
+                  <TypingDot style={[styles.dot, { backgroundColor: colors.secondary || '#FFB1C4' }]} />
                 </View>
               </BlurView>
             </View>
@@ -331,29 +334,29 @@ const ChatScreen = () => {
             },
           ]}
         >
-            <BlurView intensity={45} tint="dark" style={[styles.inputDock, { borderColor: 'rgba(255,255,255,0.08)' }]}>
-              <TextInput
-                style={[styles.inputField, { color: colors.text, fontFamily: 'Manrope_400Regular' }]}
-                value={text}
-                onChangeText={handleTextChange}
-                placeholder="Pulse a thought..."
-                placeholderTextColor={colors.textMuted}
-                multiline
-                maxLength={500}
-              />
-              <TouchableOpacity
-                onPress={handleSend}
-                disabled={!text.trim()}
-                activeOpacity={0.8}
-                style={styles.sendAction}
-              >
-                <LinearGradient
-                  colors={text.trim() ? ['#8A2BE2', '#FF4D8D'] : ['#343440', '#343440']}
-                  style={styles.sendBtn}
-                  start={{ x: 0.0, y: 0.0 }}
-                  end={{ x: 1.0, y: 1.0 }}
-                  locations={[0.0, 1.0]}
+              <BlurView intensity={45} tint={mode === 'dark' ? "dark" : "light"} style={[styles.inputDock, { borderColor: colors.border }]}>
+                <TextInput
+                  style={[styles.inputField, { color: colors.text, fontFamily: 'Manrope_400Regular' }]}
+                  value={text}
+                  onChangeText={handleTextChange}
+                  placeholder="Pulse a thought..."
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  maxLength={500}
+                />
+                <TouchableOpacity
+                  onPress={handleSend}
+                  disabled={!text.trim()}
+                  activeOpacity={0.8}
+                  style={styles.sendAction}
                 >
+                  <LinearGradient
+                    colors={text.trim() ? (mode === 'dark' ? ['#8A2BE2', '#FF4D8D'] : ['#A53B22', '#FF7E5F']) : (mode === 'dark' ? ['#343440', '#343440'] : ['#E7E2D8', '#E7E2D8'])}
+                    style={styles.sendBtn}
+                    start={{ x: 0.0, y: 0.0 }}
+                    end={{ x: 1.0, y: 1.0 }}
+                    locations={[0.0, 1.0]}
+                  >
                   <Text style={styles.sendIcon}>✦</Text>
                 </LinearGradient>
               </TouchableOpacity>
