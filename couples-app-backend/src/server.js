@@ -10,7 +10,9 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import memoryRoutes from './routes/memoryRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 import countdownRoutes from './routes/countdownRoutes.js';
+import gameRoutes from './routes/gameRoutes.js';
 import initializeSockets from './sockets/socketHandlers.js';
+import { setIO } from './controllers/authController.js';
 
 // Load env vars
 dotenv.config();
@@ -29,6 +31,9 @@ const io = new Server(server, {
     }
 });
 
+// Share io with auth controller (for partner-connected notifications)
+setIO(io);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -40,6 +45,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/memories', memoryRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/countdown', countdownRoutes);
+app.use('/api/game', gameRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

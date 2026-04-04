@@ -49,6 +49,12 @@ const useSocketStore = create((set, get) => ({
             get().watchSyncCallback?.(data);
         });
 
+        // When the partner connects via connection code, refresh user data
+        // so partnerId is populated for features like heartbeat, games, etc.
+        socket.on('partner_connected', () => {
+            useAuthStore.getState().refreshUser();
+        });
+
         set({ socket });
     },
 
@@ -78,6 +84,57 @@ const useSocketStore = create((set, get) => ({
     syncWatch: (data) => {
         const socket = get().socket;
         if (socket) socket.emit('watch sync', data);
+    },
+
+    // ── Collaborative Drawing ──────────────────────────────────────
+    emitDrawStart: (data) => {
+        const socket = get().socket;
+        if (socket) socket.emit('draw_start', data);
+    },
+
+    emitDrawMove: (data) => {
+        const socket = get().socket;
+        if (socket) socket.emit('draw_move', data);
+    },
+
+    emitDrawEnd: (data) => {
+        const socket = get().socket;
+        if (socket) socket.emit('draw_end', data);
+    },
+
+    emitDrawUndo: (data) => {
+        const socket = get().socket;
+        if (socket) socket.emit('draw_undo', data);
+    },
+
+    emitDrawClear: (data) => {
+        const socket = get().socket;
+        if (socket) socket.emit('draw_clear', data);
+    },
+
+    getCanvasState: (data) => {
+        const socket = get().socket;
+        if (socket) socket.emit('get_canvas_state', data);
+    },
+
+    setDrawingCallbacks: (callbacks) => {
+        const socket = get().socket;
+        if (!socket) return;
+
+        // Cleanup old listeners if any
+        socket.off('draw_start_received');
+        socket.off('draw_move_received');
+        socket.off('draw_end_received');
+        socket.off('draw_undo_received');
+        socket.off('draw_clear_received');
+        socket.off('canvas_state_received');
+
+        socket.on('draw_start_received', callbacks.onDrawStart);
+        socket.on('draw_move_received', callbacks.onDrawMove);
+        socket.on('draw_end_received', callbacks.onDrawEnd);
+        socket.on('draw_undo_received', callbacks.onDrawUndo);
+        socket.on('draw_clear_received', callbacks.onDrawClear);
+        socket.on('canvas_state_received', callbacks.onCanvasStateReceived);
     },
 
     setWatchSyncCallback: (cb) => set({ watchSyncCallback: cb }),

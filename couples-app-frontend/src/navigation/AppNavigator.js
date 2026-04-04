@@ -24,6 +24,8 @@ import CountdownScreen from "../screens/CountdownScreen";
 import WatchTogetherScreen from "../screens/WatchTogetherScreen";
 import GamesScreen from "../screens/GamesScreen";
 import MoreScreen from "../screens/MoreScreen";
+import MusicScreen from "../screens/MusicScreen";
+import CanvasScreen from "../screens/CanvasScreen";
 
 const { width } = Dimensions.get('window');
 const Stack = createNativeStackNavigator();
@@ -186,6 +188,8 @@ export default function AppNavigator() {
             <Stack.Screen name="Countdown" component={CountdownScreen} />
             <Stack.Screen name="Watch" component={WatchTogetherScreen} />
             <Stack.Screen name="Games" component={GamesScreen} />
+            <Stack.Screen name="Music" component={MusicScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen name="Canvas" component={CanvasScreen} />
           </>
         )}
       </Stack.Navigator>

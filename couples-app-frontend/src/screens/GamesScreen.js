@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -100,31 +100,53 @@ const TicTacToe = ({ styles, colors, mode }) => {
   const [winner, setWinner] = useState(null);
   const [scores, setScores] = useState({ me: 0, partner: 0 });
 
+  // Use refs for stable access inside socket handlers (avoids stale closures)
+  const myMarkRef = useRef(myMark);
+  const partnerMarkRef = useRef(partnerMark);
+  useEffect(() => { myMarkRef.current = myMark; }, [myMark]);
+  useEffect(() => { partnerMarkRef.current = partnerMark; }, [partnerMark]);
+
   useEffect(() => {
+    // Fetch persistent scores from backend
+    apiClient.get("/game/scores")
+      .then(res => {
+        const backendScores = res.data.scores || {};
+        setScores({
+          me: backendScores[user?._id] || 0,
+          partner: backendScores[user?.partnerId] || 0
+        });
+      })
+      .catch(err => console.log("Score fetch error:", err));
+
     apiClient.get("/auth/partner").then((res) => setPartnerName(res.data?.name || "Partner")).catch(() => {});
-  }, []);
+  }, [user?._id, user?.partnerId]);
 
   useEffect(() => {
     if (!socket) return;
+
+    // Partner chose `chosenMark`, so that's their mark — we get the opposite
     const handleMarkReceived = ({ chosenMark }) => {
       const opposite = chosenMark === "X" ? "O" : "X";
       setPartnerMark(chosenMark);
       setMyMark(opposite);
     };
+
     const handleMoveReceived = (data) => {
       setBoard(data.board);
       setCurrentTurn(data.currentTurn);
       if (data.winner) {
         setWinner(data.winner);
         if (data.winner !== "Draw") {
+          const currentMyMark = myMarkRef.current;
           setScores(s => ({
             ...s,
-            me: data.winner === myMark ? s.me + 1 : s.me,
-            partner: data.winner !== myMark ? s.partner + 1 : s.partner
+            me: data.winner === currentMyMark ? s.me + 1 : s.me,
+            partner: data.winner !== currentMyMark ? s.partner + 1 : s.partner
           }));
         }
       }
     };
+
     const handleResetReceived = () => {
       setBoard(Array(9).fill(null));
       setCurrentTurn("X");
@@ -132,6 +154,7 @@ const TicTacToe = ({ styles, colors, mode }) => {
       setMyMark(null);
       setPartnerMark(null);
     };
+
     const handleScoreResetReceived = () => {
       setScores({ me: 0, partner: 0 });
     };
@@ -147,7 +170,7 @@ const TicTacToe = ({ styles, colors, mode }) => {
       socket.off("game_reset_received", handleResetReceived);
       socket.off("game_score_reset_received", handleScoreResetReceived);
     };
-  }, [socket, myMark]);
+  }, [socket]); // Only depend on socket — refs handle the rest
 
   const isMyTurn = !!myMark && currentTurn === myMark && !winner;
 
@@ -155,6 +178,7 @@ const TicTacToe = ({ styles, colors, mode }) => {
     const opposite = mark === "X" ? "O" : "X";
     setMyMark(mark);
     setPartnerMark(opposite);
+    // Emit our chosen mark so the partner gets auto-assigned the opposite
     if (socket && partnerId) socket.emit("game_mark_selected", { receiverId: partnerId, mark });
   };
 
@@ -175,6 +199,12 @@ const TicTacToe = ({ styles, colors, mode }) => {
           me: newWinner === myMark ? s.me + 1 : s.me,
           partner: newWinner === partnerMark ? s.partner + 1 : s.partner
         }));
+
+        // Sync with backend for persistence
+        const winnerId = newWinner === myMark ? user?._id : user?.partnerId;
+        if (winnerId) {
+          apiClient.post("/game/scores/update", { winnerId }).catch(e => console.log("Persistence error:", e));
+        }
       }
     }
     
@@ -199,6 +229,8 @@ const TicTacToe = ({ styles, colors, mode }) => {
 
   const handleResetScores = () => {
     setScores({ me: 0, partner: 0 });
+    // Sync reset with backend
+    apiClient.post("/game/scores/reset").catch(e => console.log("Reset persistence error:", e));
     if (socket && partnerId) socket.emit("game_score_reset", { receiverId: partnerId });
   };
 
@@ -361,7 +393,7 @@ const QUIZ_QUESTIONS = [
   { q: "Comfort food for me is?", options: ["Pizza", "Noodles", "Ice cream", "Biryani"] },
 ];
 
-const GamesScreen = () => {
+const GamesScreen = ({ navigation }) => {
   const { colors, mode } = useThemeStore();
   const styles = createStyles(colors, mode);
   const [activeGame, setActiveGame] = useState(null);
@@ -397,6 +429,23 @@ const GamesScreen = () => {
                   <View>
                     <Text style={styles.cardTitle}>TIC TAC TOE</Text>
                     <Text style={[styles.cardSub, { color: colors.primary }]}>REAL-TIME PULSE SYNC</Text>
+                  </View>
+                </BlurView>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.editorialCard} onPress={() => navigation.navigate('Canvas')} activeOpacity={0.9}>
+              <LinearGradient
+                colors={mode === 'dark' ? ['transparent', 'transparent'] : ['#FFFFFF', '#F8F3E9']}
+                style={styles.cardGradient}
+              >
+                <BlurView intensity={mode === 'dark' ? 35 : 0} tint={mode === 'dark' ? "dark" : "light"} style={styles.cardBlur}>
+                  <View style={[styles.iconWrapper, { backgroundColor: colors.surfaceContainerHigh }]}>
+                    <Text style={styles.cardIcon}>🎨</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.cardTitle}>SHARED CANVAS</Text>
+                    <Text style={[styles.cardSub, { color: colors.accent }]}>VISUAL RESONANCE</Text>
                   </View>
                 </BlurView>
               </LinearGradient>

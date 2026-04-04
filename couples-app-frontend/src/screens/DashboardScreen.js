@@ -24,10 +24,11 @@ import Animated, {
   FadeInUp,
   FadeOut,
 } from "react-native-reanimated";
-import { RADIUS, SIZES } from "../constants/theme";
+import { RADIUS, SIZES, SHADOWS, FONTS } from "../constants/theme";
 import useAuthStore from "../store/useAuthStore";
 import useSocketStore from "../store/useSocketStore";
 import useThemeStore from "../store/useThemeStore";
+import useMusicStore from "../store/useMusicStore";
 import apiClient from "../api/apiClient";
 
 const { width } = Dimensions.get("window");
@@ -377,9 +378,34 @@ const DashboardScreen = ({ navigation }) => {
           <FeatureTile icon="heart-outline" title="Sanctuary" subtitle="Memories" onPress={() => navigation.navigate("Memories")} />
           <FeatureTile icon="pulse-outline" title="Check-In" subtitle="Sync Mood" onPress={() => navigation.navigate("CheckIn")} />
           <FeatureTile icon="play-circle-outline" title="Cinema" subtitle="Watch" onPress={() => navigation.navigate("Watch")} />
+          <FeatureTile icon="musical-notes-outline" title="Echo" subtitle="Listen" onPress={() => navigation.navigate("Music")} />
           <FeatureTile icon="game-controller-outline" title="Arena" subtitle="Play" onPress={() => navigation.navigate("Games")} />
           <FeatureTile icon="settings-outline" title="Portal" subtitle="Settings" onPress={() => navigation.navigate("More")} />
         </View>
+
+        {/* Global Now Playing Indicator */}
+        {useMusicStore.getState().isPlaying && (
+          <Animated.View entering={FadeInUp.springify()} style={[styles.miniPlayerWrap, { bottom: insets.bottom + 85 }]}>
+             <TouchableOpacity 
+               activeOpacity={0.9} 
+               style={[styles.miniPlayer, { backgroundColor: mode === 'dark' ? 'rgba(30, 30, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)', borderColor: colors.border }]}
+               onPress={() => navigation.navigate("Music")}
+             >
+                <Image source={{ uri: useMusicStore.getState().currentTrack?.cover }} style={styles.miniPlayerCover} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                   <Text style={[styles.miniPlayerTitle, { color: colors.text }]} numberOfLines={1}>
+                     {useMusicStore.getState().currentTrack?.title}
+                   </Text>
+                   <Text style={[styles.miniPlayerArtist, { color: colors.textMuted }]} numberOfLines={1}>
+                     {useMusicStore.getState().currentTrack?.artist}
+                   </Text>
+                </View>
+                <TouchableOpacity onPress={() => useMusicStore.getState().togglePlayPause()} style={styles.miniPlayerAction}>
+                   <Ionicons name={useMusicStore.getState().isPlaying ? "pause" : "play"} size={24} color={colors.primary} />
+                </TouchableOpacity>
+             </TouchableOpacity>
+          </Animated.View>
+        )}
       </ScrollView>
     </View>
   );
@@ -555,6 +581,41 @@ const createStyles = (colors, mode) => StyleSheet.create({
   },
   tileTitle: { fontSize: 18, marginBottom: 2 },
   tileSub: { fontSize: 10, letterSpacing: 1 },
+
+  miniPlayerWrap: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    zIndex: 99,
+  },
+  miniPlayer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: RADIUS.xl,
+    borderWidth: 1,
+    ...SHADOWS.ambient,
+  },
+  miniPlayerCover: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.lg,
+  },
+  miniPlayerTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 14,
+  },
+  miniPlayerArtist: {
+    fontFamily: 'PlusJakartaSans_500Medium',
+    fontSize: 10,
+    marginTop: 1,
+  },
+  miniPlayerAction: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 export default DashboardScreen;

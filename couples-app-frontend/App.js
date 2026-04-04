@@ -10,6 +10,7 @@ import {
   PlusJakartaSans_500Medium 
 } from "@expo-google-fonts/plus-jakarta-sans";
 
+import { setAudioModeAsync } from "expo-audio";
 import AppNavigator from "./src/navigation/AppNavigator";
 import useThemeStore from "./src/store/useThemeStore";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -27,6 +28,14 @@ export default function App() {
   useEffect(() => {
     initTheme();
   }, [initTheme]);
+
+  useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: "duck",
+      shouldPlayInBackground: true,
+    });
+  }, []);
 
   if (!fontsLoaded) {
     return (

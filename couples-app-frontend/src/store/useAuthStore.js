@@ -12,7 +12,18 @@ const useAuthStore = create((set) => ({
         try {
             const userStr = await AsyncStorage.getItem('user');
             if (userStr) {
-                set({ user: JSON.parse(userStr) });
+                const cachedUser = JSON.parse(userStr);
+                set({ user: cachedUser });
+                // Refresh user data from server to pick up any changes (e.g. partnerId)
+                try {
+                    const res = await apiClient.get('/auth/me');
+                    const freshData = res.data;
+                    const updatedUser = { ...cachedUser, ...freshData };
+                    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+                    set({ user: updatedUser });
+                } catch (refreshErr) {
+                    // Silently fail — use cached data
+                }
             }
         } catch (e) {
             console.error('Failed to load user info', e);
@@ -69,6 +80,22 @@ const useAuthStore = create((set) => ({
             const msg = error.response?.data?.message || 'Failed to connect';
             set({ error: msg, isLoading: false });
             throw new Error(msg);
+        }
+    },
+
+    // Refresh user data from backend (picks up partnerId changes, etc.)
+    refreshUser: async () => {
+        try {
+            const res = await apiClient.get('/auth/me');
+            const freshData = res.data;
+            set((state) => {
+                // Merge fresh data with existing user (preserve token)
+                const updatedUser = { ...state.user, ...freshData };
+                AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+                return { user: updatedUser };
+            });
+        } catch (e) {
+            console.log('Failed to refresh user:', e.message);
         }
     },
 

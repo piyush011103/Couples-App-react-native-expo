@@ -2,6 +2,10 @@ import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
 import bcrypt from 'bcrypt';
 
+// Will be set from server.js after io is created
+let _io = null;
+export const setIO = (io) => { _io = io; };
+
 const generateConnectionCode = () => {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
 };
@@ -123,6 +127,14 @@ const connectPartner = async (req, res, next) => {
         await user.save();
         await partner.save();
 
+        // Notify the partner in real-time so they can refresh their user data
+        if (_io) {
+            _io.to(partner._id.toString()).emit('partner_connected', {
+                partnerId: user._id,
+                partnerName: user.name,
+            });
+        }
+
         res.json({
             message: 'Successfully connected with partner!',
             partnerName: partner.name,
@@ -151,9 +163,28 @@ const getPartner = async (req, res, next) => {
     }
 };
 
+const getMe = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            connectionCode: user.connectionCode,
+            partnerId: user.partnerId,
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
 export {
     registerUser,
     loginUser,
     connectPartner,
-    getPartner
+    getPartner,
+    getMe
 };
