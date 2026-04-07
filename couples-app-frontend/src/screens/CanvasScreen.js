@@ -22,6 +22,7 @@ import useAuthStore from '../store/useAuthStore';
 import useSocketStore from '../store/useSocketStore';
 import useThemeStore from '../store/useThemeStore';
 
+
 const COLORS = [
     '#FF4D8D', // Pink
     '#FF9F43', // Orange
@@ -34,6 +35,14 @@ const COLORS = [
 ];
 
 const STROKE_WIDTHS = [2, 5, 10, 15];
+
+const BRUSHES = [
+    { id: 'solid', icon: 'brush', label: 'Solid' },
+    { id: 'dashed', icon: 'code-working', label: 'Dash' },
+    { id: 'dotted', icon: 'ellipsis-horizontal', label: 'Dot' },
+    { id: 'neon', icon: 'sparkles', label: 'Neon' },
+    { id: 'marker', icon: 'create', label: 'Marker' },
+];
 
 const CanvasScreen = ({ navigation }) => {
     const { colors, mode } = useThemeStore();
@@ -51,11 +60,13 @@ const CanvasScreen = ({ navigation }) => {
 
     const [selectedColor, setSelectedColor] = useState(COLORS[0]);
     const [selectedWidth, setSelectedWidth] = useState(5);
+    const [selectedBrush, setSelectedBrush] = useState('solid');
     const [history, setHistory] = useState([]);
     const [activePartnerStrokes, setActivePartnerStrokes] = useState({}); // { strokeId: { points, color, width } }
     
     // UI State
     const [showClearModal, setShowClearModal] = useState(false);
+    const [showBrushMenu, setShowBrushMenu] = useState(false);
     const [toast, setToast] = useState({ visible: false, message: '', type: 'success' });
 
     const viewShotRef = useRef(null);
@@ -74,6 +85,7 @@ const CanvasScreen = ({ navigation }) => {
                 userId: partnerId,
                 color: data.color,
                 strokeWidth: data.width,
+                brushType: data.brushType || 'solid',
                 points: [data.point]
             }
         }));
@@ -201,6 +213,10 @@ const CanvasScreen = ({ navigation }) => {
         setToast({ visible: true, message, type });
     };
 
+    const toggleBrushMenu = () => {
+        setShowBrushMenu(prev => !prev);
+    };
+
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
@@ -237,6 +253,7 @@ const CanvasScreen = ({ navigation }) => {
                     isActive={true}
                     color={selectedColor}
                     strokeWidth={selectedWidth}
+                    brushType={selectedBrush}
                     userId={user._id}
                     receiverId={partnerId}
                     onDrawStart={(data) => emitDrawStart({ ...data, senderId: user._id, receiverId: partnerId })}
@@ -265,18 +282,81 @@ const CanvasScreen = ({ navigation }) => {
                         ))}
                     </View>
                     
-                    {/* Width Picker */}
-                    <View style={styles.widthPicker}>
-                        {STROKE_WIDTHS.map((w) => (
-                            <TouchableOpacity
-                                key={w}
-                                onPress={() => setSelectedWidth(w)}
+                    {/* Width & Brush Row */}
+                    <View style={styles.toolsRow}>
+                        <View style={styles.widthPicker}>
+                            {STROKE_WIDTHS.map((w) => (
+                                <TouchableOpacity
+                                    key={w}
+                                    onPress={() => setSelectedWidth(w)}
+                                    style={[
+                                        styles.widthCircle,
+                                        { 
+                                            width: 14 + w/2, 
+                                            height: 14 + w/2, 
+                                            borderRadius: (14 + w/2) / 2, 
+                                            backgroundColor: selectedWidth === w ? colors.primary : colors.textMuted 
+                                        }
+                                    ]}
+                                />
+                            ))}
+                        </View>
+                        
+                        <View style={styles.brushContainer}>
+                            {/* Brush Selection Menu */}
+                            {showBrushMenu && (
+                                <View style={[
+                                    styles.brushMenu, 
+                                    { 
+                                        backgroundColor: isDark ? 'rgba(30, 30, 35, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                                        borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+                                    }
+                                ]}>
+                                    {BRUSHES.map((b) => (
+                                        <TouchableOpacity
+                                            key={b.id}
+                                            onPress={() => {
+                                                setSelectedBrush(b.id);
+                                                setShowBrushMenu(false);
+                                            }}
+                                            style={[
+                                                styles.brushOption,
+                                                selectedBrush === b.id && { backgroundColor: `${colors.primary}30` }
+                                            ]}
+                                        >
+                                            <Ionicons 
+                                                name={b.icon} 
+                                                size={20} 
+                                                color={selectedBrush === b.id ? colors.primary : colors.text} 
+                                            />
+                                            <Text style={[
+                                                styles.brushLabel, 
+                                                { color: selectedBrush === b.id ? colors.primary : colors.text }
+                                            ]}>
+                                                {b.label}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            )}
+
+                            <TouchableOpacity 
+                                onPress={toggleBrushMenu}
                                 style={[
-                                    styles.widthCircle,
-                                    { width: 14 + w/2, height: 14 + w/2, borderRadius: (14 + w/2) / 2, backgroundColor: selectedWidth === w ? colors.primary : colors.textMuted }
+                                    styles.brushToggle, 
+                                    { 
+                                        backgroundColor: showBrushMenu ? colors.primary : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'),
+                                        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                                    }
                                 ]}
-                            />
-                        ))}
+                            >
+                                <Ionicons 
+                                    name={showBrushMenu ? "close-outline" : "color-palette-outline"} 
+                                    size={24} 
+                                    color={showBrushMenu ? '#FFF' : colors.text} 
+                                />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
             </BlurView>
@@ -349,7 +429,6 @@ const styles = StyleSheet.create({
         left: 20,
         right: 20,
         borderRadius: 30,
-        overflow: 'hidden',
         paddingVertical: 15,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
@@ -381,9 +460,61 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+        flex: 1,
     },
     widthCircle: {
-        marginHorizontal: 15,
+        marginHorizontal: 12,
+    },
+    toolsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        paddingHorizontal: 20,
+    },
+    brushContainer: {
+        position: 'relative',
+    },
+    brushToggle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    brushMenu: {
+        position: 'absolute',
+        bottom: 55,
+        right: 0,
+        borderRadius: 16,
+        padding: 6,
+        width: 140,
+        borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.2,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    brushOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        marginVertical: 1,
+    },
+    brushLabel: {
+        fontSize: 13,
+        marginLeft: 10,
+        fontWeight: '600',
+        fontFamily: 'PlusJakartaSans-Medium',
     },
 });
 
